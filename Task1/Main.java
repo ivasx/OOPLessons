@@ -1,5 +1,3 @@
-package Task1;
-
 import java.util.Scanner;
 import java.util.Random;
 
@@ -30,8 +28,16 @@ class NumberGuess {
 
     void compareNumbers(int userNumber) {
         while (userNumber != guessedNumber) {
-            System.out.print("Спробуйте ще раз: ");
+            while (userNumber < guessedNumber) {
+                System.out.println("Загадане число більше. Спробуйте ще раз: ");
+                break;
+            }
+            while (userNumber > guessedNumber){
+                System.out.println("Загадане число менше. Спробуйте ще раз: ");
+                break;
+            }
             return;
+
         }
         equality = false;
         System.out.println("Ви вгадали число, загадане число: " + guessedNumber);
