@@ -15,11 +15,9 @@ class NumberGuess {
     int guessedNumber = random.nextInt(101);
 
     void validationNumber(int userNumber){
-        while (userNumber == 0) {
+        if(userNumber == 0) {
             printNumber();
-            break;
-        }
-        while ((userNumber < 0) | (userNumber > 100))  {
+        } else if(userNumber < 0 || userNumber > 100) {
             System.out.println("Введене число Не в діапазоні від 1 до 100. Спробуйте ще раз: ");
             userNumber = scan.nextInt();
         }
@@ -27,20 +25,14 @@ class NumberGuess {
     }
 
     void compareNumbers(int userNumber) {
-        while (userNumber != guessedNumber) {
-            while (userNumber < guessedNumber) {
-                System.out.println("Загадане число більше. Спробуйте ще раз: ");
-                break;
-            }
-            while (userNumber > guessedNumber){
-                System.out.println("Загадане число менше. Спробуйте ще раз: ");
-                break;
-            }
-            return;
-
-        }
+        if(userNumber < guessedNumber) {
+            System.out.println("Загадане число більше. Спробуйте ще раз: ");
+        } else if (userNumber > guessedNumber){
+            System.out.println("Загадане число менше. Спробуйте ще раз: ");
+        } else {
         equality = false;
         System.out.println("Ви вгадали число, загадане число: " + guessedNumber);
+        }
     }
 
     public void guessTheNumber() {
