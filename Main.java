@@ -1,269 +1,229 @@
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Scanner;
-
-
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 
 public class Main {
-   public static void main(String[] args) {
-       Scanner scan = new Scanner(System.in);
-       ArrayList<Form> forms = new ArrayList<>();
+    public static void main(String[] args) {
+        Bank bank = new Bank();
 
+        bank.createAccount("4444 1111 0678 1148", "Івас", 17);
+        bank.createAccount("5375 2121 4839 2290", "Іван", 20);
 
-       forms.add(new Form("Івас", 2007, "Гра на піаніно", 10, "Закінчив музичну школу", false, 2500));
-       forms.add(new Form("Марічка", 2006, "Малювання", 8, "Ходить на гурток образотворчого мистецтва", true, 2300));
-       forms.add(new Form("Остап", 2005, "Футбол", 9, "Грав у шкільній команді", false, 2100));
-       forms.add(new Form("Софія", 2008, "Танці", 7, "Брала участь у конкурсах", true, 2400));
-       forms.add(new Form("Богдан", 2007, "Плавання", 10, "Переможець змагань району", false, 2600));
-       forms.add(new Form("Катерина", 2009, "Шахи", 6, "Має грамоти", true, 2000));
-       forms.add(new Form("Андрій", 2006, "Програмування", 10, "Вивчає Java самостійно", false, 2700));
-       forms.add(new Form("Олена", 2005, "Писання віршів", 9, "Друкувалась у шкільній газеті", true, 2200));
-       forms.add(new Form("Дмитро", 2008, "Баскетбол", 7, "Грає за юнацьку команду", false, 2150));
-       forms.add(new Form("Ірина", 2007, "Співи", 8, "Закінчила вокальний гурток", true, 2550));
-       forms.add(new Form("Тарас", 2006, "Робототехніка", 10, "Брав участь у всеукраїнських конкурсах", false, 2900));
+        System.out.println("Перегляд інформації про рахунок:");
+        bank.idGetAccount("4444 1111 0678 1148");
 
+        System.out.println("Поповнення рахунку:");
+        bank.getBankAccounts().get("4444 1111 0678 1148").deposit(100);
 
-       FormAnalytics formAnalytics = new FormAnalytics(forms);
+        System.out.println("Зняття коштів:");
+        bank.getBankAccounts().get("4444 1111 0678 1148").withdrawal(200);
 
+        System.out.println("Показ усіх рахунків:");
+        bank.showAccounts();
 
-       formAnalytics.printForms(forms);
-       formAnalytics.sortAge(forms);
-       System.out.println("Анкети після сортування по віку:");
-       formAnalytics.printForms(forms);
-       formAnalytics.sortName(forms);
-       System.out.println("Анкети після сортування по імені:");
-       formAnalytics.printForms(forms);
-       formAnalytics.calculateAverageSalary(forms);
-       formAnalytics.calculateAverageAge();
-       formAnalytics.countMarriedPeople(forms);
-       formAnalytics.quantityForms();
-       formAnalytics.countFormsByYear(2007);
-       formAnalytics.peopleWithSalaryAboveAverage();
-       formAnalytics.topHobbies();
-       formAnalytics.sortHobbiesByLength();
-       formAnalytics.topHobbiesByMaritalStatus();
-   }
+        System.out.println("Історія транзакцій:");
+        bank.getBankAccounts().get("4444 1111 0678 1148").transactionHistoryGet();
+
+        System.out.println("Редагування інформації власника:");
+        bank.getBankAccounts().get("4444 1111 0678 1148").editOwnerInf();
+
+        System.out.println("Переказ коштів:");
+        bank.sendMoney("4444 1111 0678 1148", "5375 2121 4839 2290", 100);
+
+        System.out.println("Історія транзакцій:");
+        bank.getBankAccounts().get("4444 1111 0678 1148").transactionHistoryGet();
+    }
 }
 
 
-class Form {
-   private String name;
-   private int birthYear;
-   private String hobby;
-   private int hobbyDuration;
-   private String hobbyAchievements;
-   private boolean isMarried;
-   private double salary;
+class BankAccount {
+    private String accountNumber;
+    private double balance;
+    private HashMap<String, String> transactionHistory; // У форматі {дата: транзакція}, при зчитуванні (транзакція, дата)
+    private String ownerName;
+    private int ownerAge;
+    private Scanner scan = new Scanner(System.in);
 
+    public BankAccount(String accountNumber, String ownerName, int ownerAge){
+        this.accountNumber = accountNumber;
+        this.balance = 0.0;
+        this.transactionHistory = new HashMap<>();
+        this.ownerName = ownerName;
+        this.ownerAge = ownerAge;
+    }
 
+    public void deposit(double depositAmount){
+        if(depositAmount < 0){
+            System.out.println("Сума депозиту не може бути від'ємною.");
+        } else {
+            setBalance(getBalance() + depositAmount);
+            System.out.println("Рахунок поповнено на " + depositAmount + ". Поточний баланс: " + getBalance());
+            recordTransactionInf("Поповнення рахунку", depositAmount);
+        }
+    }
 
+    public void withdrawal(double withdrawalAmount){
+        if(withdrawalAmount < 0 || withdrawalAmount > getBalance()){
+            System.out.println("Сума зняття не може бути від'ємною та більшою за баланс рахунку.");
+        } else {
+            setBalance(getBalance() - withdrawalAmount);
+            System.out.println("З рахунку знято " + withdrawalAmount + ". Поточний баланс: " + getBalance());
+            recordTransactionInf("Зняття з рахунку", withdrawalAmount);
+        }
+    }
 
-   Form(String name, int birthYear, String hobby, int hobbyDuration, String hobbyAchievements, boolean isMarried, double salary) {
-       this.name = name;
-       this.birthYear = birthYear;
-       this.hobby = hobby;
-       this.hobbyDuration = hobbyDuration;
-       this.hobbyAchievements = hobbyAchievements;
-       this.isMarried = isMarried;
-       this.salary = salary;
-   }
+    public void viewBalance(){
+        System.out.println("Баланс рахунку " + getAccountNumber() + ": " + getBalance());
+    }
 
+    public void transactionHistoryGet(){
+        if(getTransactionHistory().isEmpty()){
+            System.out.println("Ще не було жодних транзакцій.");
+        } else {
+            System.out.println("Історія транзакцій " + getOwnerName() + ":");
+            for (HashMap.Entry<String, String> entry : getTransactionHistory().entrySet()) {
+                System.out.println("Транзакція: " + entry.getValue() + ", Час транзакції: " + entry.getKey());
+            }
+        }
+    }
 
-   public String getName() { return name; }
-   public int getBirthYear() { return birthYear; }
-   public String getHobby() { return hobby; }
-   public int getHobbyDuration() { return hobbyDuration; }
-   public String getHobbyAchievements() { return hobbyAchievements; }
-   public boolean getIsMarried() { return isMarried; }
-   public double getSalary() { return salary; }
-   public int getAge() { return 2025 - birthYear; }
+    public void editOwnerInf(){
+        System.out.println("Введіть нове ім'я власника рахунку: ");
+        setOwnerName(scan.nextLine());
+        System.out.println("Введіть новий вік власника рахунку: ");
+        setOwnerAge(scan.nextInt());
+        scan.nextLine();
+    }
 
+    public void recordTransactionInf(String transaction, double transactionAmount) {
+        if (transactionAmount < 0) {
+            System.out.println("Сума транзакції не може бути від'ємною.");
+            return;
+        }
+        LocalDateTime transactionTime = LocalDateTime.now();
+        DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        String formattedTime = transactionTime.format(myFormatObj);
+        String formattedTransactionAmount = String.format("%.2f", transactionAmount);
+        getTransactionHistory().put(formattedTime, transaction + ": " + formattedTransactionAmount);
+    }
 
-   public void aboutMyself() {
-       System.out.println("==============================================================");
-       System.out.println(" Ім'я          : " + name);
-       System.out.println(" Вік           : " + getAge() + " років");
-       System.out.println(" Рік народження: " + birthYear);
-       System.out.println(" Захоплення    : " + hobby + " (" + hobbyDuration + " років)");
-       System.out.println(" Досягнення    : " + hobbyAchievements);
-       System.out.println(" Одружений(-на): " + (isMarried ? "💍 Так" : "❌ Ні"));
-       System.out.println(" Зарплата      : " + salary + " грн");
-       System.out.println("==============================================================");
-   }
+    // Гетери
+    public String getAccountNumber() {
+        return accountNumber;
+    }
 
+    public double getBalance() {
+        return balance;
+    }
 
+    public HashMap<String, String> getTransactionHistory() {
+        return transactionHistory;
+    }
+
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public int getOwnerAge() {
+        return ownerAge;
+    }
+
+    // Сетери
+    public void setAccountNumber(String accountNumber) {
+        this.accountNumber = accountNumber;
+    }
+
+    public void setBalance(double balance) {
+        this.balance = balance;
+    }
+
+    public void setTransactionHistory(HashMap<String, String> transactionHistory) {
+        this.transactionHistory = transactionHistory;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
+
+    public void setOwnerAge(int ownerAge) {
+        this.ownerAge = ownerAge;
+    }
 }
 
+class Bank {
+    private HashMap<String, BankAccount> bankAccounts;  //ID та загалом рахунок
 
-class FormAnalytics {
-   private ArrayList<Form> forms;
+    public Bank(){
+        this.bankAccounts = new HashMap<>();
+    }
 
-
-   FormAnalytics(ArrayList<Form> forms) {
-       this.forms = forms;
-   }
-
-
-    void printForms(ArrayList<Form> forms){
-       for (Form form : forms) {
-           form.aboutMyself();
-       }
-   }
+    public HashMap<String, BankAccount> getBankAccounts() {
+        return bankAccounts;
+    }
+    public void setBankAccounts(HashMap<String, BankAccount> bankAccounts) {
+        this.bankAccounts = bankAccounts;
+    }
 
 
-   void sortAge(ArrayList<Form> forms) {
-       forms.sort(Comparator.comparingInt(Form::getAge));
-   }
+
+    public void createAccount(String accountNumber, String ownerName, int ownerAge){
+        if (getBankAccounts().containsKey(accountNumber)){
+            System.out.println("Банківський рахунок з таким номером уже існує. Користувача не створено.");
+        } else {
+            BankAccount account = new BankAccount(accountNumber, ownerName, ownerAge);
+            getBankAccounts().put(accountNumber, account);
+        }
+    }
+
+    public void idGetAccount(String accountNumber){
+        if (getBankAccounts().containsKey(accountNumber)){
+            System.out.println("Рахунок " + accountNumber);
+            System.out.println("Баланс: " + getBankAccounts().get(accountNumber).getBalance());
+            System.out.println("Ім'я власника: " + getBankAccounts().get(accountNumber).getOwnerName());
+            System.out.println("Вік власника: " + getBankAccounts().get(accountNumber).getOwnerAge());
+            System.out.println("Історія транзакцій: ");
+            getBankAccounts().get(accountNumber).transactionHistoryGet();
+        }
+    }
+
+    public void showAccounts() {
+        for (HashMap.Entry<String, BankAccount> entry : getBankAccounts().entrySet()) {
+            String accountNumber = entry.getKey();
+            BankAccount account = entry.getValue();
+            System.out.println("Номер рахунку: " + accountNumber);
+            System.out.println("Ім'я власника: " + account.getOwnerName());
+            System.out.println("Баланс: " + account.getBalance());
+        }
+    }
+
+    public void sendMoney(String senderNumber, String recipientNumber, double sendAmount){
+        BankAccount sender = getBankAccounts().get(senderNumber);
+        BankAccount recipient = getBankAccounts().get(recipientNumber);
+
+        if (sender == null){
+            System.out.println("Рахунок відправника (" + senderNumber + ") не знайдено.");
+            return;
+        }
+        if (recipient == null){
+            System.out.println("Рахунок одержувача (" + recipientNumber + ") не знайдено.");
+            return;
+        }
 
 
-   void sortName(ArrayList<Form> forms) {
-       forms.sort(Comparator.comparing(Form::getName));
-   }
-
-
-   void calculateAverageSalary(ArrayList<Form> forms) {
-       double totalSalary = 0;
-       for (Form form : forms) {
-           totalSalary += form.getSalary();
-       }
-       System.out.println("Середня зарплата: " + totalSalary / forms.size());
-   }
-
-
-   void countMarriedPeople(ArrayList<Form> forms) {
-       int count = 0;
-       for (Form form : forms) {
-           if (form.getIsMarried()) {
-               count++;
-           }
-       }
-       System.out.println("Кількість одружених людей: " + count);
-   }
-
-
-   void quantityForms(){System.out.println("Кількість анкет: " + forms.size());}
-
-
-   void countFormsByYear(int year) {
-       int count = 0;
-       for (Form form : forms) {
-           if (form.getBirthYear() == year) {
-               count++;
-           }
-       }
-       System.out.println("Кількість анкет людей, народжених у " + year + " році: " + count);
-   }
-
-
-   void calculateAverageAge() {
-       int totalAge = 0;
-       for (Form form : forms) {
-           totalAge += form.getAge();
-       }
-       double averageAge = (double) totalAge / forms.size();
-       System.out.println("Середній вік власників форм: " + averageAge);
-   }
-
-
-   void peopleWithSalaryAboveAverage() {
-       double totalSalary = 0;
-       for (Form form : forms) {
-           totalSalary += form.getSalary();
-       }
-
-
-       double averageSalary = totalSalary / forms.size();
-       double threshold = averageSalary * 1.1;
-
-
-       System.out.println("Люди з ЗП більше на 10% від середньої:");
-       for (Form form : forms) {
-           if (form.getSalary() > threshold) {
-               System.out.println(form.getName());
-           }
-       }
-   }
-
-
-   void topHobbies() {
-       HashMap<String, Integer> hobbyCounts = new HashMap<>();
-
-
-       for (Form form : forms) {
-           String hobby = form.getHobby();
-           if (hobbyCounts.containsKey(hobby)) {
-               hobbyCounts.put(hobby, hobbyCounts.get(hobby) + 1);
-           } else {
-               hobbyCounts.put(hobby, 1);
-           }
-       }
-
-
-       ArrayList<HashMap.Entry<String, Integer>> sortedList = new ArrayList<>(hobbyCounts.entrySet());
-
-
-       for (int i = 0; i < sortedList.size() - 1; i++) {
-           for (int j = i + 1; j < sortedList.size(); j++) {
-               if (sortedList.get(i).getValue() < sortedList.get(j).getValue()) {
-                   HashMap.Entry<String, Integer> temp = sortedList.get(i);
-                   sortedList.set(i, sortedList.get(j));
-                   sortedList.set(j, temp);
-               }
-           }
-       }
-
-
-       System.out.println("Топ 3 найпопулярніших захоплення:");
-       for (int i = 0; i < Math.min(3, sortedList.size()); i++) {
-           HashMap.Entry<String, Integer> entry = sortedList.get(i);
-           System.out.println(entry.getKey() + " - " + entry.getValue());
-       }
-   }
-
-
-   void sortHobbiesByLength() {
-       forms.sort(Comparator.comparing((Form::getHobbyDuration)).reversed());
-       System.out.println("Захоплення за довжиною:");
-       for (Form form : forms) {
-           System.out.println(form.getHobby() + " - " + form.getHobbyDuration() + " років");
-       }
-   }
-
-
-   void topHobbiesByMaritalStatus() {
-       HashMap<String, Integer> marriedHobbies = new HashMap<>();
-       HashMap<String, Integer> unmarriedHobbies = new HashMap<>();
-
-
-       for (Form form : forms) {
-           String hobby = form.getHobby();
-           if (form.getIsMarried()) {
-               marriedHobbies.put(hobby, marriedHobbies.getOrDefault(hobby, 0) + 1);
-           } else {
-               unmarriedHobbies.put(hobby, unmarriedHobbies.getOrDefault(hobby, 0) + 1);
-           }
-       }
-
-
-       ArrayList<HashMap.Entry<String, Integer>> sortedMarriedHobbies = new ArrayList<>(marriedHobbies.entrySet());
-
-
-       System.out.println("Топ 3 захоплення для одружених:");
-       for (int i = 0; i < Math.min(3, sortedMarriedHobbies.size()); i++) {
-           HashMap.Entry<String, Integer> entry = sortedMarriedHobbies.get(i);
-           System.out.println(entry.getKey() + " - " + entry.getValue());
-       }
-
-
-       ArrayList<HashMap.Entry<String, Integer>> sortedUnmarriedHobbies = new ArrayList<>(unmarriedHobbies.entrySet());
-
-
-       System.out.println("Топ 3 захоплення для неодружених:");
-       for (int i = 0; i < Math.min(3, sortedUnmarriedHobbies.size()); i++) {
-           HashMap.Entry<String, Integer> entry = sortedUnmarriedHobbies.get(i);
-           System.out.println(entry.getKey() + " - " + entry.getValue());
-       }
-   }
+        if (sendAmount <= sender.getBalance()){
+            sender.setBalance(sender.getBalance() - sendAmount);
+            recipient.setBalance(recipient.getBalance() + sendAmount);
+            System.out.println("Переказ здійснено успішно.");
+            System.out.println("Баланс відправника (" + sender.getOwnerName() + "): " + sender.getBalance());
+            System.out.println("Баланс отримувача (" + recipient.getOwnerName() + "): " + recipient.getBalance());
+            System.out.println("Переказ здійснено успішно.");
+            sender.recordTransactionInf(("Надіслав кошти " + recipient.getOwnerName()), sendAmount);
+            recipient.recordTransactionInf(("Отримав кошти від " + sender.getOwnerName()), sendAmount);
+        } else {
+            System.out.println("Коштів недостатньо для переказу.");
+        }
+    }
 }
+
